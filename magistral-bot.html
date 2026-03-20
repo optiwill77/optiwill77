@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magistral School — Bot WhatsApp</title>
+<link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --wa-green: #25D366;
+  --wa-green-dark: #128C7E;
+  --wa-green-light: #DCF8C6;
+  --wa-teal: #075E54;
+  --wa-bg: #ECE5DD;
+  --wa-chat-bg: #0B141A;
+  --wa-bubble-in: #1F2C34;
+  --wa-bubble-out: #005C4B;
+  --wa-text: #E9EDEF;
+  --wa-text-secondary: #8696A0;
+  --wa-header: #202C33;
+  --wa-input-bg: #2A3942;
+  --wa-border: #2A3942;
+  --wa-online: #25D366;
+  --wa-tick: #53BDEB;
+}
+
+body {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #111B21;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+}
+
+/* Background pattern like WhatsApp web */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='304' height='162' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23182229' fill-rule='evenodd'%3E%3Cpath d='M152 81c0 20.71-16.79 37.5-37.5 37.5S77 101.71 77 81s16.79-37.5 37.5-37.5S152 60.29 152 81z' opacity='.3'/%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.4;
+  z-index: 0;
+}
+
+.page {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  padding: 24px 16px;
+  width: 100%;
+  max-width: 960px;
+}
+
+/* ═══════════════════════ PHONE FRAME ═══════════════════════ */
+.phone-frame {
+  flex-shrink: 0;
+  width: 375px;
+  background: #000;
+  border-radius: 50px;
+  padding: 10px;
+  box-shadow:
+    0 0 0 1px #2a2a2a,
+    0 0 0 3px #1a1a1a,
+    0 40px 80px rgba(0,0,0,0.8),
+    inset 0 0 0 1px #333;
+  position: relative;
+}
+
+/* Notch */
+.phone-frame::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 28px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 100;
+  box-shadow: inset 0 0 0 1px #222;
+}
+
+/* Camera dot */
+.phone-frame::after {
+  content: '';
+  position: absolute;
+  top: 27px;
+  left: 50%;
+  transform: translateX(-50%) translateX(32px);
+  width: 10px;
+  height: 10px;
+  background: #1a1a1a;
+  border-radius: 50%;
+  z-index: 101;
+  box-shadow: inset 0 0 0 2px #111, 0 0 4px rgba(80,160,255,0.3);
+}
+
+.phone-screen {
+  background: var(--wa-chat-bg);
+  border-radius: 42px;
+  overflow: hidden;
+  height: 780px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* iOS status bar */
+.status-bar {
+  background: var(--wa-header);
+  height: 44px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 28px 6px;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding-top: 10px;
+}
+
+.status-bar .time {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--wa-text);
+  letter-spacing: -0.3px;
+}
+
+.status-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-icons svg {
+  fill: var(--wa-text);
+}
+
+/* WhatsApp header */
+.wa-header {
+  background: var(--wa-header);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.back-btn {
+  color: var(--wa-green);
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.back-btn svg { width: 10px; height: 16px; fill: var(--wa-green); }
+
+.contact-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--wa-green-dark), var(--wa-green));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(37,211,102,0.3);
+  letter-spacing: -0.5px;
+}
+
+.contact-info { flex: 1; min-width: 0; }
+.contact-name { font-size: 16px; font-weight: 600; color: var(--wa-text); letter-spacing: -0.2px; }
+.contact-status { font-size: 12px; color: var(--wa-green); font-weight: 400; }
+.contact-status.offline { color: var(--wa-text-secondary); }
+
+.header-actions {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+.header-actions svg { width: 22px; height: 22px; fill: var(--wa-text-secondary); }
+
+/* Chat background with WhatsApp pattern */
+.chat-bg {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  position: relative;
+  scroll-behavior: smooth;
+  background-color: var(--wa-chat-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='%23182229' fill-opacity='0.6'%3E%3Cpath d='M0 0h40v40H0zm40 40h40v40H40z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 80px 80px;
+}
+
+.chat-bg::-webkit-scrollbar { width: 0; }
+
+/* Date chip */
+.date-chip {
+  align-self: center;
+  background: rgba(17,27,33,0.85);
+  backdrop-filter: blur(8px);
+  color: var(--wa-text);
+  font-size: 11.5px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  margin: 8px 0 6px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Encrypted notice */
+.encrypted-notice {
+  align-self: center;
+  background: rgba(255,217,102,0.12);
+  border: 1px solid rgba(255,217,102,0.2);
+  color: #F0C040;
+  font-size: 11px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  margin: 4px 0 10px;
+  text-align: center;
+  max-width: 85%;
+  line-height: 1.5;
+}
+
+/* Message bubbles */
+.msg-row {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 2px;
+  animation: msgIn 0.2s ease-out;
+}
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.msg-row.out { justify-content: flex-end; }
+.msg-row.in { justify-content: flex-start; }
+
+/* Avatar for incoming */
+.msg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--wa-green-dark), var(--wa-green));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  margin-right: 4px;
+  margin-bottom: 2px;
+  opacity: 0;
+}
+
+.msg-avatar.show { opacity: 1; }
+
+.bubble {
+  max-width: 72%;
+  padding: 7px 10px 5px 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  position: relative;
+  word-break: break-word;
+}
+
+.bubble.in {
+  background: var(--wa-bubble-in);
+  color: var(--wa-text);
+  border-top-left-radius: 3px;
+}
+
+/* Tail for incoming */
+.bubble.in::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 8px 8px 0;
+  border-color: transparent var(--wa-bubble-in) transparent transparent;
+}
+
+.bubble.out {
+  background: var(--wa-bubble-out);
+  color: var(--wa-text);
+  border-top-right-radius: 3px;
+}
+
+/* Tail for outgoing */
+.bubble.out::after {
+  content: '';
+  position: absolute;
+  right: -8px;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 8px 8px;
+  border-color: transparent transparent transparent var(--wa-bubble-out);
+}
+
+.bubble-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.bubble-time {
+  font-size: 11px;
+  color: rgba(134,150,160,0.8);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.bubble-ticks {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.bubble-ticks svg { width: 14px; height: 10px; }
+
+/* Typing indicator */
+.typing-bubble {
+  background: var(--wa-bubble-in);
+  border-radius: 10px;
+  border-top-left-radius: 3px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  margin-left: 32px;
+  animation: msgIn 0.2s ease-out;
+  position: relative;
+}
+
+.typing-bubble::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 0;
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: 0 8px 8px 0;
+  border-color: transparent var(--wa-bubble-in) transparent transparent;
+}
+
+.typing-bubble span {
+  width: 7px; height: 7px;
+  background: var(--wa-text-secondary);
+  border-radius: 50%;
+  animation: typingDot 1.4s infinite;
+  display: block;
+}
+.typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+.typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingDot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* Quick reply chips */
+.qr-area {
+  padding: 8px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: rgba(0,0,0,0.2);
+  border-top: 1px solid var(--wa-border);
+  min-height: 48px;
+  align-items: center;
+}
+
+.qr-chip {
+  background: transparent;
+  border: 1.5px solid var(--wa-green);
+  color: var(--wa-green);
+  font-size: 12.5px;
+  padding: 5px 13px;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+}
+
+.qr-chip:active {
+  background: rgba(37,211,102,0.15);
+  transform: scale(0.97);
+}
+
+/* Input bar */
+.input-bar {
+  background: var(--wa-header);
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+.emoji-btn, .attach-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%; border: none;
+  background: transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.emoji-btn:hover, .attach-btn:hover { background: rgba(255,255,255,0.06); }
+.emoji-btn svg, .attach-btn svg { width: 22px; height: 22px; fill: var(--wa-text-secondary); }
+
+.text-input {
+  flex: 1;
+  background: var(--wa-input-bg);
+  border: none;
+  border-radius: 24px;
+  padding: 9px 16px;
+  color: var(--wa-text);
+  font-size: 14.5px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: background 0.2s;
+  line-height: 1.4;
+}
+
+.text-input::placeholder { color: var(--wa-text-secondary); font-size: 14.5px; }
+.text-input:disabled { opacity: 0.4; }
+
+.send-btn {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: var(--wa-green);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
+  box-shadow: 0 2px 8px rgba(37,211,102,0.35);
+}
+
+.send-btn:hover { background: #20bd5a; }
+.send-btn:active { transform: scale(0.92); }
+.send-btn svg { width: 20px; height: 20px; fill: #fff; margin-left: 2px; }
+
+/* ═══════════════════════ SIDE PANEL ═══════════════════════ */
+.side-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.panel-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #4a5568;
+  margin-bottom: 4px;
+  padding-left: 2px;
+}
+
+.card {
+  background: #1a2332;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.card h3 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #4a5568;
+  margin-bottom: 16px;
+}
+
+/* Score ring */
+.score-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.ring-container { position: relative; width: 76px; height: 76px; flex-shrink: 0; }
+.ring-container svg { transform: rotate(-90deg); }
+.ring-label {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700; font-size: 18px;
+  color: #fff;
+}
+
+.score-info { min-width: 0; }
+.score-info strong {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.score-info p { font-size: 12px; color: #4a5568; line-height: 1.5; }
+
+/* Criteria */
+.criteria { display: flex; flex-direction: column; gap: 9px; }
+.crit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+}
+.crit-left { display: flex; align-items: center; gap: 8px; color: #4a5568; }
+.crit-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #2d3748; flex-shrink: 0;
+  transition: background 0.4s ease;
+}
+.crit-dot.ok { background: var(--wa-green); box-shadow: 0 0 6px rgba(37,211,102,0.4); }
+.crit-dot.warn { background: #F6AD55; box-shadow: 0 0 6px rgba(246,173,85,0.4); }
+.crit-val { font-size: 11.5px; font-weight: 500; color: #718096; max-width: 100px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Prompt block */
+.prompt-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.copy-btn {
+  background: rgba(37,211,102,0.1);
+  border: 1px solid rgba(37,211,102,0.3);
+  color: var(--wa-green);
+  font-size: 11px; padding: 4px 10px;
+  border-radius: 6px; cursor: pointer;
+  transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+}
+.copy-btn:hover { background: rgba(37,211,102,0.2); }
+
+.prompt-body {
+  font-size: 10.5px; color: #4a5568;
+  line-height: 1.7; max-height: 150px;
+  overflow-y: auto; white-space: pre-wrap;
+  font-family: 'SF Mono', monospace;
+  background: rgba(0,0,0,0.3);
+  padding: 10px 12px; border-radius: 8px;
+}
+.prompt-body::-webkit-scrollbar { width: 3px; }
+.prompt-body::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 3px; }
+
+/* Tech steps */
+.tech-step { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
+.tech-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(229,62,62,0.1); border: 1px solid rgba(229,62,62,0.3);
+  color: #FC8181; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tech-body { font-size: 12px; line-height: 1.5; padding-top: 3px; }
+.tech-body strong { color: #cbd5e0; display: block; margin-bottom: 1px; font-weight: 500; }
+.tech-body span { color: #4a5568; }
+
+@media (max-width: 820px) {
+  .page { flex-direction: column; align-items: center; }
+  .phone-frame { width: 100%; max-width: 390px; }
+  .side-panel { width: 100%; max-width: 390px; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ══ PHONE ══ -->
+  <div class="phone-frame">
+    <div class="phone-screen">
+
+      <!-- iOS status bar -->
+      <div class="status-bar">
+        <span class="time" id="clock">23:29</span>
+        <div class="status-icons">
+          <!-- Signal -->
+          <svg width="17" height="12" viewBox="0 0 17 12"><rect x="0" y="6" width="3" height="6" rx="1"/><rect x="4.5" y="4" width="3" height="8" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+          <!-- Wifi -->
+          <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 9a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0-3.5A6.5 6.5 0 0113.2 7.5l-1.4 1.4A4.5 4.5 0 008 7.5a4.5 4.5 0 00-3.8 1.4L2.8 7.5A6.5 6.5 0 018 5.5zM8 2a10 10 0 017.07 2.93L13.66 6.3A8 8 0 008 4a8 8 0 00-5.66 2.3L.93 4.93A10 10 0 018 2z" fill-rule="evenodd"/></svg>
+          <!-- Battery -->
+          <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="2.5" stroke="#fff" stroke-width="1" fill="none"/><rect x="22.5" y="3.5" width="2" height="5" rx="1" fill="#fff" opacity="0.4"/><rect x="1.5" y="2.5" width="15" height="7" rx="1.5" fill="#30D158"/></svg>
+        </div>
+      </div>
+
+      <!-- WA Header -->
+      <div class="wa-header">
+        <div class="back-btn">
+          <svg viewBox="0 0 10 16"><path d="M8.5 1L1.5 8l7 7" stroke="#25D366" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span style="font-size:13px;color:#25D366;font-weight:500;margin-left:2px;">1</span>
+        </div>
+        <div class="contact-avatar">MS</div>
+        <div class="contact-info">
+          <div class="contact-name">Magistral School</div>
+          <div class="contact-status" id="contact-status">en ligne</div>
+        </div>
+        <div class="header-actions">
+          <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.15 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+        </div>
+      </div>
+
+      <!-- Chat area -->
+      <div class="chat-bg" id="chatArea">
+        <div class="encrypted-notice">
+          🔒 Les messages sont chiffrés de bout en bout. Ni WhatsApp ni des tiers ne peuvent les lire.
+        </div>
+        <div class="date-chip" id="dateChip">Aujourd'hui</div>
+      </div>
+
+      <!-- Quick replies -->
+      <div class="qr-area" id="qrArea"></div>
+
+      <!-- Input bar -->
+      <div class="input-bar">
+        <button class="emoji-btn">
+          <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
+        </button>
+        <input type="text" class="text-input" id="msgInput" placeholder="Message" />
+        <button class="attach-btn">
+          <svg viewBox="0 0 24 24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/></svg>
+        </button>
+        <button class="send-btn" id="sendBtn" onclick="handleSend()">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ SIDE PANEL ══ -->
+  <div class="side-panel">
+
+    <div class="panel-title">Dashboard</div>
+
+    <!-- Score card -->
+    <div class="card">
+      <h3>📊 Analyse prospect</h3>
+      <div class="score-wrap">
+        <div class="ring-container">
+          <svg width="76" height="76" viewBox="0 0 76 76">
+            <circle cx="38" cy="38" r="32" fill="none" stroke="#1e2d3d" stroke-width="7"/>
+            <circle id="scoreRing" cx="38" cy="38" r="32" fill="none" stroke="#25D366" stroke-width="7"
+              stroke-dasharray="201.1" stroke-dashoffset="201.1" stroke-linecap="round"
+              style="transition: stroke-dashoffset 0.7s cubic-bezier(0.4,0,0.2,1), stroke 0.5s ease"/>
+          </svg>
+          <div class="ring-label" id="scorePct">0%</div>
+        </div>
+        <div class="score-info">
+          <strong id="scoreLabel">En écoute…</strong>
+          <p id="scoreDesc">Le bot analyse la conversation en temps réel.</p>
+        </div>
+      </div>
+      <div class="criteria">
+        <div class="crit-row"><span class="crit-left"><span class="crit-dot" id="d-origin"></span>Origine</span><span class="crit-val" id="v-origin">—</span></div>
+        <div class="crit-row"><span class="crit-left"><span class="crit-dot" id="d-job"></span>Situation pro</span><span class="crit-val" id="v-job">—</span></div>
+        <div class="crit-row"><span class="crit-left"><span class="crit-dot" id="d-goal"></span>Ambition musicale</span><span class="crit-val" id="v-goal">—</span></div>
+        <div class="crit-row"><span class="crit-left"><span class="crit-dot" id="d-time"></span>Disponibilité</span><span class="crit-val" id="v-time">—</span></div>
+        <div class="crit-row"><span class="crit-left"><span class="crit-dot" id="d-budget"></span>Budget</span><span class="crit-val" id="v-budget">—</span></div>
+        <div class="crit-row"><span class="crit-left"><span class="crit-dot" id="d-urgency"></span>Urgence</span><span class="crit-val" id="v-urgency">—</span></div>
+      </div>
+    </div>
+
+    <!-- Prompt -->
+    <div class="card">
+      <div class="prompt-header">
+        <h3 style="margin:0">Prompt Claude API</h3>
+        <button class="copy-btn" id="copyBtn" onclick="doCopy()">📋 Copier</button>
+      </div>
+      <div class="prompt-body" id="promptBody"></div>
+    </div>
+
+    <!-- Tech steps -->
+    <div class="card">
+      <h3>🔧 Stack technique</h3>
+      <div class="tech-step"><div class="tech-num">1</div><div class="tech-body"><strong>WhatsApp Business API</strong><span>Twilio ou Meta Cloud API — webhook sur chaque message entrant.</span></div></div>
+      <div class="tech-step"><div class="tech-num">2</div><div class="tech-body"><strong>Claude API</strong><span>Endpoint /v1/messages — prompt système + historique conversation.</span></div></div>
+      <div class="tech-step"><div class="tech-num">3</div><div class="tech-body"><strong>Make / n8n</strong><span>WhatsApp → Claude → Calendly automatiquement.</span></div></div>
+      <div class="tech-step"><div class="tech-num">4</div><div class="tech-body"><strong>Airtable / Notion</strong><span>CRM — chaque prospect qualifié sauvegardé avec son score.</span></div></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── Live clock ───────────────────────────────────────────────────────
+function updateClock() {
+  var n = new Date();
+  var h = n.getHours().toString().padStart(2,'0');
+  var m = n.getMinutes().toString().padStart(2,'0');
+  var el = document.getElementById('clock');
+  if (el) el.textContent = h + ':' + m;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ─── Prompt text ─────────────────────────────────────────────────────
+var PROMPT_TEXT = "Tu es un closer expert pour Magistral School,\nacadémie musicale certifiée Qualiopi (Guadeloupe).\n\nTu mènes une VRAIE conversation — pas un formulaire.\nTon ton : chaleureux, complice, humain.\n\nFORMATIONS :\n• Home Studio collectif — 800 €\n• Home Studio individuel — 1 280 €\n• Formation DJ / Kit DJ — 2 500 €\n• Beatmaking, MAO, SACEM\n• Business musical — 800-2 900 €\nFinancement : CPF, OPCO, Pass Culture.\n\nTUNNEL (une question à la fois) :\n1. Origine du contact\n2. Situation professionnelle\n3. Projet et ambition musicale\n4. Disponibilités\n5. Budget / financement\n6. Urgence\n\nRÈGLES CLOSER :\n- Reformule et valide avant chaque question\n- Si chômage/reconversion → valorise CPF à 100%\n- Ne parle PAS des prix d'entrée de jeu\n- Conclusion : résumé valorisant + appel Calendly";
+
+var promptEl = document.getElementById('promptBody');
+if (promptEl) promptEl.textContent = PROMPT_TEXT;
+
+function doCopy() {
+  try {
+    navigator.clipboard.writeText(PROMPT_TEXT);
+  } catch(e) {}
+  var btn = document.getElementById('copyBtn');
+  if (btn) { btn.textContent = '✅ Copié !'; setTimeout(function(){ btn.textContent = '📋 Copier'; }, 2000); }
+}
+
+// ─── State ────────────────────────────────────────────────────────────
+var currentStep = 0;
+var totalScore = 0;
+var answers = {};
+var isLocked = false;
+
+// ─── Steps definition ─────────────────────────────────────────────────
+var STEPS = [
+  {
+    key: 'origin',
+    getMsg: function(last, ans) {
+      return "Salut ! 🎵 Bienvenue chez Magistral School !\n\nJe suis là pour t'aider à trouver la formation qui te correspond vraiment. Avant tout… t'as entendu parler de nous comment ?";
+    },
+    opts: ["Un ami m'a recommandé", "J'ai vu une pub", "Sur Instagram / TikTok", "Autre"],
+    score: function(v) { return /ami|recommand/i.test(v) ? 1 : 0; },
+    dotClass: function(v) { return /ami|recommand/i.test(v) ? 'ok' : 'warn'; }
+  },
+  {
+    key: 'job',
+    getMsg: function(last, ans) {
+      if (/ami|recommand/i.test(last)) {
+        return "Les recommandations c'est vraiment notre meilleure pub — les gens qui arrivent comme ça sont souvent les plus déterminés 😄\n\nDis-moi, t'es sur quoi en ce moment dans ta vie ? Tu travailles, t'es en études…";
+      }
+      return "Super, content que tu nous aies trouvés ! 😄\n\nDis-moi, t'es sur quoi en ce moment dans ta vie ? Tu travailles, t'es en études…";
+    },
+    opts: ["En emploi", "En reconversion", "Étudiant(e)", "Demandeur d'emploi", "Indépendant / Freelance"],
+    score: function(v) { return /chômage|demandeur|reconversion|indépendant|freelance/i.test(v) ? 1 : 0; },
+    dotClass: function(v) { return /chômage|demandeur|reconversion/i.test(v) ? 'ok' : 'warn'; }
+  },
+  {
+    key: 'goal',
+    getMsg: function(last, ans) {
+      var job = ans['job'] || '';
+      if (/chômage|demandeur/i.test(job)) {
+        return "Je vois, et bonne nouvelle — dans ta situation, nos formations peuvent être financées à 100% via le CPF ou Pôle Emploi. Donc t'as vraiment rien à perdre à te lancer ! 💪\n\nMais dis-moi l'essentiel : c'est quoi ton truc dans la musique ? T'as un projet, une envie depuis longtemps ?";
+      }
+      if (/reconversion/i.test(job)) {
+        return "La reconversion c'est souvent le meilleur choix qu'on puisse faire 💯 Et dans la musique y'a vraiment de quoi construire quelque chose de solide.\n\nT'as un projet précis en tête ? Une envie musicale qui te tient à cœur ?";
+      }
+      return "C'est cool ! Et dans la musique, t'as un projet qui te tient à cœur ? Une envie depuis longtemps ?";
+    },
+    opts: ["Produire mes propres sons", "Devenir DJ", "Créer mon activité musicale", "Me reconvertir dans la musique"],
+    score: function(v) { return 2; },
+    dotClass: function(v) { return 'ok'; }
+  },
+  {
+    key: 'time',
+    getMsg: function(last, ans) {
+      var goal = ans['goal'] || '';
+      if (/dj/i.test(goal)) {
+        return "Le DJing c'est une belle voie, et notre formateur DJ Rester a une expérience scène internationale — t'es entre de bonnes mains 🎧\n\nCôté timing, t'aurais quoi comme disponibilité pour te former ? On a des formules assez flexibles.";
+      }
+      if (/produi|son|beat/i.test(goal)) {
+        return "Production, beatmaking… c'est exactement le cœur de ce qu'on fait ici. Magistral Beats forme les producteurs en personne 🎹\n\nT'aurais du temps dans ton agenda pour une formation ? On a des sessions courtes et intensives.";
+      }
+      return "C'est exactement le genre de projet qui nous parle ici 🎵\n\nEt niveau timing, t'aurais quoi comme dispo pour te former ? C'est important pour qu'on trouve la bonne formule.";
+    },
+    opts: ["Cette semaine / Très vite", "Dans le mois", "Je suis assez flexible", "Dans quelques mois"],
+    score: function(v) { return /vite|semaine|mois$/i.test(v) ? 1 : 0; },
+    dotClass: function(v) { return /vite|semaine|mois$/i.test(v) ? 'ok' : 'warn'; }
+  },
+  {
+    key: 'budget',
+    getMsg: function(last, ans) {
+      var job = ans['job'] || '';
+      if (/chômage|demandeur|reconversion/i.test(job)) {
+        return "Parfait, on va trouver quelque chose qui marche 👌\n\nQuestion importante : t'as une idée du budget que tu pourrais mettre dedans ? Sachant qu'avec ton profil, y'a de fortes chances qu'on puisse faire financer une bonne partie, voire la totalité.";
+      }
+      return "On va trouver quelque chose qui colle 👌\n\nQuestion budget — t'as une idée de ce que tu peux investir ? Je te demande parce que selon ta situation y'a parfois des financements disponibles qu'on ne pense pas à activer.";
+    },
+    opts: ["Moins de 500 €", "500 – 1 000 €", "1 000 – 2 000 €", "+2 000 € ou financement"],
+    score: function(v) {
+      if (/Moins/.test(v)) return 0;
+      if (/500/.test(v)) return 1;
+      return 2;
+    },
+    dotClass: function(v) { return /Moins/.test(v) ? 'warn' : 'ok'; }
+  },
+  {
+    key: 'urgency',
+    getMsg: function(last, ans) {
+      var budget = ans['budget'] || '';
+      if (/Moins/.test(budget)) {
+        return "C'est noté ! Et sache qu'on a des options de financement même pour les petits budgets — le CPF peut vraiment tout changer.\n\nDis-moi, t'aurais une idée du moment où tu voudrais démarrer ? Histoire qu'on cible les bonnes dates.";
+      }
+      return "C'est parfait, on a des formules qui rentrent bien dans cette fourchette 👍\n\nEt niveau timing pour démarrer, t'en es où ? T'as une échéance en tête ?";
+    },
+    opts: ["Le plus tôt possible", "Dans les 2-3 semaines", "Dans 1-2 mois", "Pas encore décidé"],
+    score: function(v) { return /tôt|2.3 semaine/i.test(v) ? 1 : 0; },
+    dotClass: function(v) { return /tôt|2.3 semaine/i.test(v) ? 'ok' : 'warn'; }
+  }
+];
+
+// ─── Score UI update ──────────────────────────────────────────────────
+function updateScoreUI() {
+  var pct = Math.min(100, Math.round((totalScore / 8) * 100));
+  var circ = 201.1;
+  var ring = document.getElementById('scoreRing');
+  if (ring) {
+    ring.style.strokeDashoffset = (circ - (circ * pct / 100)).toString();
+    ring.style.stroke = pct >= 60 ? '#25D366' : pct >= 40 ? '#F6AD55' : '#FC8181';
+  }
+  var pctEl = document.getElementById('scorePct');
+  if (pctEl) pctEl.textContent = pct + '%';
+  var lbl = document.getElementById('scoreLabel');
+  var desc = document.getElementById('scoreDesc');
+  if (pct >= 60) {
+    if (lbl) { lbl.textContent = '🔥 Prospect CHAUD'; lbl.style.color = '#25D366'; }
+    if (desc) desc.textContent = 'Proposer un appel de vente maintenant.';
+  } else if (pct >= 40) {
+    if (lbl) { lbl.textContent = '⚡ Prospect TIÈDE'; lbl.style.color = '#F6AD55'; }
+    if (desc) desc.textContent = 'Nourrir la relation + proposer appel léger.';
+  } else {
+    if (lbl) { lbl.textContent = '❄️ Prospect FROID'; lbl.style.color = '#FC8181'; }
+    if (desc) desc.textContent = 'Renvoyer vers le site web pour le moment.';
+  }
+}
+
+function setCrit(key, dc, val) {
+  var dot = document.getElementById('d-' + key);
+  var valEl = document.getElementById('v-' + key);
+  if (dot) { dot.className = 'crit-dot'; if (dc) dot.classList.add(dc); }
+  if (valEl) valEl.textContent = val.length > 18 ? val.substring(0, 17) + '…' : val;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────
+function getNow() {
+  var n = new Date();
+  return n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0');
+}
+
+function delay(ms) {
+  return new Promise(function(resolve) { setTimeout(resolve, ms); });
+}
+
+// ─── Render messages ──────────────────────────────────────────────────
+function addBotMsg(text, showAvatar) {
+  var area = document.getElementById('chatArea');
+  if (!area) return;
+
+  var row = document.createElement('div');
+  row.className = 'msg-row in';
+  row.style.alignItems = 'flex-end';
+
+  var av = document.createElement('div');
+  av.className = 'msg-avatar' + (showAvatar ? ' show' : '');
+  av.textContent = 'MS';
+  row.appendChild(av);
+
+  var bubble = document.createElement('div');
+  bubble.className = 'bubble in';
+  bubble.innerHTML = text.replace(/\n/g, '<br>');
+
+  var meta = document.createElement('div');
+  meta.className = 'bubble-meta';
+  var tm = document.createElement('span');
+  tm.className = 'bubble-time';
+  tm.textContent = getNow();
+  meta.appendChild(tm);
+  bubble.appendChild(meta);
+
+  row.appendChild(bubble);
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+}
+
+function addUserMsg(text) {
+  var area = document.getElementById('chatArea');
+  if (!area) return;
+
+  var row = document.createElement('div');
+  row.className = 'msg-row out';
+
+  var bubble = document.createElement('div');
+  bubble.className = 'bubble out';
+  bubble.innerHTML = text.replace(/\n/g, '<br>');
+
+  var meta = document.createElement('div');
+  meta.className = 'bubble-meta';
+  var tm = document.createElement('span');
+  tm.className = 'bubble-time';
+  tm.textContent = getNow();
+  // Double blue ticks
+  meta.appendChild(tm);
+  var ticks = document.createElement('span');
+  ticks.className = 'bubble-ticks';
+  ticks.innerHTML = '<svg viewBox="0 0 16 11" fill="none"><path d="M1 5.5L4.5 9L9 4" stroke="#53BDEB" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 5.5L8.5 9L15 2" stroke="#53BDEB" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  meta.appendChild(ticks);
+  bubble.appendChild(meta);
+
+  row.appendChild(bubble);
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+}
+
+function showTypingIndicator() {
+  var area = document.getElementById('chatArea');
+  if (!area) return;
+  var t = document.createElement('div');
+  t.className = 'typing-bubble';
+  t.id = 'typingInd';
+  t.innerHTML = '<span></span><span></span><span></span>';
+  area.appendChild(t);
+  area.scrollTop = area.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  var t = document.getElementById('typingInd');
+  if (t) t.parentNode.removeChild(t);
+}
+
+function setQuickReplies(opts) {
+  var area = document.getElementById('qrArea');
+  if (!area) return;
+  area.innerHTML = '';
+  if (!opts || opts.length === 0) return;
+  for (var i = 0; i < opts.length; i++) {
+    (function(opt) {
+      var btn = document.createElement('button');
+      btn.className = 'qr-chip';
+      btn.textContent = opt;
+      btn.onclick = function() {
+        var inp = document.getElementById('msgInput');
+        if (inp) inp.value = opt;
+        handleSend();
+      };
+      area.appendChild(btn);
+    })(opts[i]);
+  }
+}
+
+// ─── Bot reply logic ──────────────────────────────────────────────────
+function buildConclusion() {
+  var pct = Math.min(100, Math.round((totalScore / 8) * 100));
+  var goal = answers['goal'] || '';
+  var job = answers['job'] || '';
+  var budget = answers['budget'] || '';
+  var urgency = answers['urgency'] || '';
+
+  var formation = 'la formation Home Studio';
+  if (/dj/i.test(goal)) formation = 'la formation DJ';
+  else if (/beat|son|produi/i.test(goal)) formation = 'la formation Beatmaking ou Home Studio';
+  else if (/activité|business|reconver/i.test(goal)) formation = 'la formation Business Musical';
+
+  var financement = '';
+  if (/chômage|demandeur/i.test(job)) {
+    financement = ' Et avec ton profil, le CPF ou l\'OPCO peuvent couvrir la totalité — zéro reste à charge.';
+  } else if (/Moins/.test(budget)) {
+    financement = ' Et bonne nouvelle, le CPF peut couvrir une bonne partie même dans ta situation.';
+  }
+
+  if (pct >= 60) {
+    return "Franchement j'adore ton profil 🙏\n\nT'as un vrai projet, une vraie motivation — je pense que " + formation + " est exactement ce qu'il te faut pour passer au niveau supérieur." + financement + "\n\nCe que je te propose : un appel de 20 min avec notre équipe pour tout te présenter en détail, répondre à tes questions. Sans engagement.\n\n📞 Choisis ton créneau ici → calendly.com/magistralschool\n\nHâte qu'on avance ensemble ! 🎵";
+  } else if (pct >= 40) {
+    return "T'as un profil intéressant et un beau projet devant toi 🎵\n\nJe pense que " + formation + " peut vraiment coller à ce que tu cherches." + financement + "\n\nAvant de sauter le pas, explore nos programmes sur magistralschool.fr\n\nEt si t'as des questions, n'hésite pas : contact@magistralschool.com 😊";
+  } else {
+    return "Merci pour cet échange ! 😊\n\nMême si c'est pas encore le bon moment, garde Magistral School en tête." + financement + "\n\nTout est sur magistralschool.fr — formations pour tous les profils et tous les budgets.\n\nÀ bientôt ! 🎵";
+  }
+}
+
+function botRespond(userText) {
+  return new Promise(function(resolve) {
+    (async function() {
+      isLocked = true;
+      setQuickReplies([]);
+      var inp = document.getElementById('msgInput');
+      var statusEl = document.getElementById('contact-status');
+      if (inp) inp.disabled = true;
+      if (statusEl) { statusEl.textContent = 'en train d\'écrire…'; statusEl.className = 'contact-status'; }
+
+      // Score the previous step
+      if (currentStep > 0 && currentStep <= STEPS.length) {
+        var s = STEPS[currentStep - 1];
+        var pts = s.score(userText);
+        totalScore += pts;
+        answers[s.key] = userText;
+        setCrit(s.key, s.dotClass(userText), userText);
+        updateScoreUI();
+      }
+
+      await delay(500 + Math.random() * 400);
+      showTypingIndicator();
+
+      var replyText = '';
+      var nextOpts = null;
+
+      if (currentStep < STEPS.length) {
+        var step = STEPS[currentStep];
+        replyText = step.getMsg(userText, answers);
+        nextOpts = step.opts;
+        currentStep++;
+      } else {
+        replyText = buildConclusion();
+        currentStep++;
+      }
+
+      // Split into paragraphs for multi-bubble effect
+      var paras = replyText.split('\n\n');
+      var firstPart = paras.slice(0, Math.ceil(paras.length / 2)).join('\n\n');
+      var secondPart = paras.length > 1 ? paras.slice(Math.ceil(paras.length / 2)).join('\n\n') : null;
+
+      var typingTime = 800 + firstPart.length * 18;
+      if (typingTime > 2800) typingTime = 2800;
+      await delay(typingTime);
+
+      removeTypingIndicator();
+      addBotMsg(firstPart, true);
+
+      if (secondPart && secondPart.trim()) {
+        await delay(400);
+        showTypingIndicator();
+        var t2 = 600 + secondPart.length * 15;
+        if (t2 > 2200) t2 = 2200;
+        await delay(t2);
+        removeTypingIndicator();
+        addBotMsg(secondPart, false);
+      }
+
+      if (nextOpts) setQuickReplies(nextOpts);
+
+      if (statusEl) { statusEl.textContent = 'en ligne'; statusEl.className = 'contact-status'; }
+      if (inp) inp.disabled = false;
+      if (inp) inp.focus();
+      isLocked = false;
+      resolve();
+    })();
+  });
+}
+
+// ─── Send handler ─────────────────────────────────────────────────────
+function handleSend() {
+  if (isLocked) return;
+  var inp = document.getElementById('msgInput');
+  if (!inp) return;
+  var text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  setQuickReplies([]);
+  addUserMsg(text);
+  botRespond(text);
+}
+
+// ─── Input enter key ──────────────────────────────────────────────────
+var msgInput = document.getElementById('msgInput');
+if (msgInput) {
+  msgInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') handleSend();
+  });
+}
+
+// ─── Init greeting ────────────────────────────────────────────────────
+(function init() {
+  var statusEl = document.getElementById('contact-status');
+  if (statusEl) { statusEl.textContent = 'en ligne'; }
+
+  setTimeout(function() {
+    showTypingIndicator();
+    setTimeout(function() {
+      removeTypingIndicator();
+      var firstStep = STEPS[0];
+      var msg = firstStep.getMsg('', {});
+      var paras = msg.split('\n\n');
+      var first = paras[0];
+      var second = paras.length > 1 ? paras.slice(1).join('\n\n') : null;
+
+      addBotMsg(first, true);
+
+      if (second) {
+        setTimeout(function() {
+          showTypingIndicator();
+          setTimeout(function() {
+            removeTypingIndicator();
+            addBotMsg(second, false);
+            setQuickReplies(firstStep.opts);
+          }, 1000);
+        }, 400);
+      } else {
+        setQuickReplies(firstStep.opts);
+      }
+      currentStep = 1;
+    }, 1400);
+  }, 800);
+})();
+</script>
+</body>
+</html>
